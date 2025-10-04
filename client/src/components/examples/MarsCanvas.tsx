@@ -43,6 +43,8 @@ export default function MarsCanvasExample() {
         onPlaceItem={() => {}}
         onSelectItem={setSelectedItemId}
         onMoveItem={handleMoveItem}
+        zoom={1}
+        gridSnap={false}
       />
     </div>
   );

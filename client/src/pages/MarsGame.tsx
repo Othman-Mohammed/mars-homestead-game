@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PlacedItem, HabitatItemType, Resources, INITIAL_RESOURCES } from '@/lib/gameTypes';
 import { soundManager } from '@/lib/soundEffects';
-import { saveGame, loadGame, hasSavedGame } from '@/lib/gameStorage';
+import { saveGame, loadGame } from '@/lib/gameStorage';
+import { GameHistory } from '@/lib/gameHistory';
 import ResourceBar from '@/components/ResourceBar';
 import InventoryPanel from '@/components/InventoryPanel';
 import MarsCanvas from '@/components/MarsCanvas';
 import ControlBar from '@/components/ControlBar';
 import WelcomeModal from '@/components/WelcomeModal';
+import ZoomControls from '@/components/ZoomControls';
+import StatisticsPanel from '@/components/StatisticsPanel';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MarsGame() {
@@ -16,7 +19,14 @@ export default function MarsGame() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [gridSnap, setGridSnap] = useState(true);
   const { toast } = useToast();
+  
+  const historyRef = useRef(new GameHistory());
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const hasVisited = localStorage.getItem('mars-habitat-visited');
@@ -29,7 +39,10 @@ export default function MarsGame() {
     if (savedData) {
       setPlacedItems(savedData.placedItems);
       setResources(savedData.resources);
+      historyRef.current.pushState(savedData.placedItems);
       console.log('Game loaded from localStorage');
+    } else {
+      historyRef.current.pushState([]);
     }
   }, []);
 
@@ -60,6 +73,32 @@ export default function MarsGame() {
     soundManager.setEnabled(soundEnabled);
   }, [soundEnabled]);
 
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearInterval(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setInterval(() => {
+      if (placedItems.length > 0) {
+        saveGame(placedItems, resources);
+        console.log('Auto-saved game');
+      }
+    }, 30000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [placedItems, resources]);
+
+  const updatePlacedItems = useCallback((newItems: PlacedItem[]) => {
+    setPlacedItems(newItems);
+    historyRef.current.pushState(newItems);
+    setCanUndo(historyRef.current.canUndo());
+    setCanRedo(historyRef.current.canRedo());
+  }, []);
+
   const handleItemSelect = (itemType: HabitatItemType) => {
     setSelectedItemType(itemType);
     setSelectedItemId(null);
@@ -77,7 +116,7 @@ export default function MarsGame() {
       rotation: 0,
     };
 
-    setPlacedItems((prev) => [...prev, newItem]);
+    updatePlacedItems([...placedItems, newItem]);
     setSelectedItemType(null);
     if (soundEnabled) soundManager.placement();
     console.log('Placed item:', selectedItemType.name, 'at', x, y);
@@ -98,13 +137,12 @@ export default function MarsGame() {
   const handleRotate = () => {
     if (!selectedItemId) return;
 
-    setPlacedItems((prev) =>
-      prev.map((item) =>
-        item.id === selectedItemId
-          ? { ...item, rotation: (item.rotation + 90) % 360 }
-          : item
-      )
+    const newItems = placedItems.map((item) =>
+      item.id === selectedItemId
+        ? { ...item, rotation: (item.rotation + 90) % 360 }
+        : item
     );
+    updatePlacedItems(newItems);
     if (soundEnabled) soundManager.rotate();
     console.log('Rotated item');
   };
@@ -112,11 +150,36 @@ export default function MarsGame() {
   const handleDelete = useCallback(() => {
     if (!selectedItemId) return;
 
-    setPlacedItems((prev) => prev.filter((item) => item.id !== selectedItemId));
+    const newItems = placedItems.filter((item) => item.id !== selectedItemId);
+    updatePlacedItems(newItems);
     setSelectedItemId(null);
     if (soundEnabled) soundManager.deletion();
     console.log('Deleted item');
-  }, [selectedItemId, soundEnabled]);
+  }, [selectedItemId, placedItems, soundEnabled, updatePlacedItems]);
+
+  const handleUndo = () => {
+    const previousState = historyRef.current.undo();
+    if (previousState !== null) {
+      setPlacedItems(previousState);
+      setSelectedItemId(null);
+      setCanUndo(historyRef.current.canUndo());
+      setCanRedo(historyRef.current.canRedo());
+      if (soundEnabled) soundManager.click();
+      console.log('Undo');
+    }
+  };
+
+  const handleRedo = () => {
+    const nextState = historyRef.current.redo();
+    if (nextState !== null) {
+      setPlacedItems(nextState);
+      setSelectedItemId(null);
+      setCanUndo(historyRef.current.canUndo());
+      setCanRedo(historyRef.current.canRedo());
+      if (soundEnabled) soundManager.click();
+      console.log('Redo');
+    }
+  };
 
   const handleSave = () => {
     saveGame(placedItems, resources);
@@ -129,7 +192,7 @@ export default function MarsGame() {
   };
 
   const handleClear = () => {
-    setPlacedItems([]);
+    updatePlacedItems([]);
     setSelectedItemId(null);
     setSelectedItemType(null);
     if (soundEnabled) soundManager.deletion();
@@ -141,15 +204,35 @@ export default function MarsGame() {
     console.log('All items cleared');
   };
 
+  const handleZoomIn = () => {
+    setZoom((prev) => Math.min(1.5, prev + 0.1));
+  };
+
+  const handleZoomOut = () => {
+    setZoom((prev) => Math.max(0.5, prev - 0.1));
+  };
+
+  const handleResetZoom = () => {
+    setZoom(1);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'r' || e.key === 'R') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+      } else if (e.key === 'r' || e.key === 'R') {
         handleRotate();
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         handleDelete();
       } else if (e.key === 'Escape') {
         setSelectedItemId(null);
         setSelectedItemType(null);
+      } else if (e.key === 'g' || e.key === 'G') {
+        setGridSnap((prev) => !prev);
       }
     };
 
@@ -172,15 +255,34 @@ export default function MarsGame() {
             onPlaceItem={handlePlaceItem}
             onSelectItem={handleSelectItem}
             onMoveItem={handleMoveItem}
+            zoom={zoom}
+            gridSnap={gridSnap}
           />
+
+          <ZoomControls
+            zoom={zoom}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onResetZoom={handleResetZoom}
+          />
+
+          <div className="absolute top-6 left-6 z-20 w-64">
+            <StatisticsPanel placedItems={placedItems} resources={resources} />
+          </div>
 
           <ControlBar
             onSave={handleSave}
             onClear={handleClear}
             onRotate={handleRotate}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
             soundEnabled={soundEnabled}
             onToggleSound={() => setSoundEnabled(!soundEnabled)}
+            gridSnap={gridSnap}
+            onToggleGrid={() => setGridSnap(!gridSnap)}
             hasSelection={selectedItemId !== null}
+            canUndo={canUndo}
+            canRedo={canRedo}
           />
         </div>
 
