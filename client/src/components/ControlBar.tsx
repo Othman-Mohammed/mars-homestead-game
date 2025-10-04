@@ -32,38 +32,42 @@ export default function ControlBar({
 }: ControlBarProps) {
   return (
     <div 
-      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 max-w-[95vw]"
       data-testid="control-bar"
     >
-      <div className="bg-card/95 backdrop-blur-sm border border-card-border rounded-lg shadow-lg p-3">
-        <div className="flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => {
-              console.log('Undo clicked');
-              onUndo();
-            }}
-            disabled={!canUndo}
-            data-testid="button-undo"
-          >
-            <Undo2 className="w-4 h-4" />
-          </Button>
+      <div className="bg-card/95 backdrop-blur-sm border border-card-border rounded-lg shadow-lg p-2 sm:p-3">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                console.log('Undo clicked');
+                onUndo();
+              }}
+              disabled={!canUndo}
+              data-testid="button-undo"
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Undo2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            </Button>
 
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => {
-              console.log('Redo clicked');
-              onRedo();
-            }}
-            disabled={!canRedo}
-            data-testid="button-redo"
-          >
-            <Redo2 className="w-4 h-4" />
-          </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                console.log('Redo clicked');
+                onRedo();
+              }}
+              disabled={!canRedo}
+              data-testid="button-redo"
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Redo2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            </Button>
+          </div>
 
-          <div className="w-px h-8 bg-border" />
+          <div className="w-px h-6 sm:h-8 bg-border" />
 
           <Button
             size="sm"
@@ -73,55 +77,61 @@ export default function ControlBar({
               onSave();
             }}
             data-testid="button-save"
+            className="h-8 sm:h-9"
           >
-            <Save className="w-4 h-4 mr-2" />
-            Save
+            <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Save</span>
           </Button>
 
-          <div className="w-px h-8 bg-border" />
+          <div className="w-px h-6 sm:h-8 bg-border" />
 
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => {
-              console.log('Rotate clicked');
-              onRotate();
-            }}
-            disabled={!hasSelection}
-            data-testid="button-rotate"
-          >
-            <RotateCw className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                console.log('Rotate clicked');
+                onRotate();
+              }}
+              disabled={!hasSelection}
+              data-testid="button-rotate"
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <RotateCw className="w-3 h-3 sm:w-4 sm:h-4" />
+            </Button>
 
-          <Button
-            size="icon"
-            variant={gridSnap ? 'default' : 'outline'}
-            onClick={() => {
-              console.log('Toggle grid clicked');
-              onToggleGrid();
-            }}
-            data-testid="button-grid"
-          >
-            <Grid3x3 className="w-4 h-4" />
-          </Button>
+            <Button
+              size="icon"
+              variant={gridSnap ? 'default' : 'outline'}
+              onClick={() => {
+                console.log('Toggle grid clicked');
+                onToggleGrid();
+              }}
+              data-testid="button-grid"
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Grid3x3 className="w-3 h-3 sm:w-4 sm:h-4" />
+            </Button>
 
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => {
-              console.log('Toggle sound clicked');
-              onToggleSound();
-            }}
-            data-testid="button-sound"
-          >
-            {soundEnabled ? (
-              <Volume2 className="w-4 h-4" />
-            ) : (
-              <VolumeX className="w-4 h-4" />
-            )}
-          </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                console.log('Toggle sound clicked');
+                onToggleSound();
+              }}
+              data-testid="button-sound"
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" />
+              ) : (
+                <VolumeX className="w-3 h-3 sm:w-4 sm:h-4" />
+              )}
+            </Button>
+          </div>
 
-          <div className="w-px h-8 bg-border" />
+          <div className="w-px h-6 sm:h-8 bg-border" />
 
           <Button
             size="sm"
@@ -133,9 +143,10 @@ export default function ControlBar({
               }
             }}
             data-testid="button-clear"
+            className="h-8 sm:h-9"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear All
+            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Clear</span>
           </Button>
         </div>
       </div>

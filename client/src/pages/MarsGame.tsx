@@ -10,6 +10,8 @@ import ControlBar from '@/components/ControlBar';
 import WelcomeModal from '@/components/WelcomeModal';
 import ZoomControls from '@/components/ZoomControls';
 import StatisticsPanel from '@/components/StatisticsPanel';
+import { Button } from '@/components/ui/button';
+import { Building2, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MarsGame() {
@@ -21,6 +23,8 @@ export default function MarsGame() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [gridSnap, setGridSnap] = useState(true);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const { toast } = useToast();
   
   const historyRef = useRef(new GameHistory());
@@ -266,8 +270,42 @@ export default function MarsGame() {
             onResetZoom={handleResetZoom}
           />
 
-          <div className="absolute top-6 left-6 z-20 w-64">
-            <StatisticsPanel placedItems={placedItems} resources={resources} />
+          <Button
+            size="icon"
+            variant="default"
+            className="fixed top-4 left-4 z-20 lg:hidden h-10 w-10"
+            onClick={() => setStatsOpen(true)}
+            data-testid="button-open-statistics"
+          >
+            <Building2 className="w-5 h-5" />
+          </Button>
+
+          <Button
+            size="icon"
+            variant="default"
+            className="fixed top-4 right-16 sm:right-20 z-20 lg:hidden h-10 w-10"
+            onClick={() => setInventoryOpen(true)}
+            data-testid="button-open-inventory"
+          >
+            <Package className="w-5 h-5" />
+          </Button>
+
+          <div className="hidden lg:block">
+            <StatisticsPanel 
+              placedItems={placedItems} 
+              resources={resources}
+              isOpen={true}
+              onClose={() => {}}
+            />
+          </div>
+
+          <div className="lg:hidden">
+            <StatisticsPanel 
+              placedItems={placedItems} 
+              resources={resources}
+              isOpen={statsOpen}
+              onClose={() => setStatsOpen(false)}
+            />
           </div>
 
           <ControlBar
@@ -286,12 +324,15 @@ export default function MarsGame() {
           />
         </div>
 
-        <div className="flex-shrink-0">
-          <InventoryPanel
-            onItemSelect={handleItemSelect}
-            selectedItemId={selectedItemType?.id || null}
-          />
-        </div>
+        <InventoryPanel
+          onItemSelect={(item) => {
+            handleItemSelect(item);
+            setInventoryOpen(false);
+          }}
+          selectedItemId={selectedItemType?.id || null}
+          isOpen={inventoryOpen}
+          onClose={() => setInventoryOpen(false)}
+        />
       </div>
 
       <WelcomeModal open={showWelcome} onClose={() => setShowWelcome(false)} />

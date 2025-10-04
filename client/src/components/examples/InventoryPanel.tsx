@@ -4,6 +4,7 @@ import { HabitatItemType } from '@/lib/gameTypes';
 
 export default function InventoryPanelExample() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   const handleItemSelect = (itemType: HabitatItemType) => {
     setSelectedItemId(itemType.id);
@@ -14,6 +15,8 @@ export default function InventoryPanelExample() {
       <InventoryPanel 
         onItemSelect={handleItemSelect}
         selectedItemId={selectedItemId}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
       />
     </div>
   );

@@ -20,7 +20,12 @@ export default function StatisticsPanelExample() {
 
   return (
     <div className="p-8 bg-background">
-      <StatisticsPanel placedItems={placedItems} resources={resources} />
+      <StatisticsPanel 
+        placedItems={placedItems} 
+        resources={resources}
+        isOpen={true}
+        onClose={() => {}}
+      />
     </div>
   );
 }
