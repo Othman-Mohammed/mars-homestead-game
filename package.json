@@ -1,8 +1,10 @@
 {
-  "name": "rest-express",
+  "name": "mars-homestead-game",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "description": "Interactive Mars habitat builder game - Build and manage sustainable Mars colonies",
+  "keywords": ["mars", "game", "simulation", "react", "typescript", "space"],
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
